@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.com/zynero/shared/transport"
+	"github.com/zynerotech/shared/transport"
 
 	json "github.com/bytedance/sonic"
 	"github.com/rs/zerolog/log"

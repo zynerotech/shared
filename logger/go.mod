@@ -1,4 +1,4 @@
-module gitlab.com/zynero/shared/logger
+module github.com/zynerotech/shared/logger
 
 go 1.24.2
 

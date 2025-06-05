@@ -1,4 +1,4 @@
-module gitlab.com/zynero/shared/cache
+module github.com/zynerotech/shared/cache
 
 go 1.24.2
 

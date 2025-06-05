@@ -9,7 +9,7 @@ import (
 	json "github.com/bytedance/sonic"
 	"github.com/rs/zerolog/log"
 	"github.com/segmentio/kafka-go"
-	"gitlab.com/zynero/shared/transport"
+	"github.com/zynerotech/shared/transport"
 )
 
 // RetryableError represents an error that may or may not be retried.

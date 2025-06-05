@@ -1,3 +1,3 @@
-module gitlab.com/zynero/shared
+module github.com/zynerotech/shared
 
 go 1.24.2

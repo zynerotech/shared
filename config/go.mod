@@ -1,4 +1,4 @@
-module gitlab.com/zynero/shared/config
+module github.com/zynerotech/shared/config
 
 go 1.24.2
 
