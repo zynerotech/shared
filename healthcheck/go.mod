@@ -1,3 +1,3 @@
-module github.com/zynerotech/shared/healthcheck
+module gitlab.com/zynero/shared/healthcheck
 
 go 1.24.2

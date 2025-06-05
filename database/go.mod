@@ -1,4 +1,4 @@
-module github.com/zynerotech/shared/database
+module gitlab.com/zynero/shared/database
 
 go 1.24.2
 

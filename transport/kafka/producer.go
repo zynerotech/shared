@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl/scram"
-	"github.com/zynerotech/shared/transport"
+	"gitlab.com/zynero/shared/transport"
 )
 
 type KafkaProducer struct {

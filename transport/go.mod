@@ -1,4 +1,4 @@
-module github.com/zynerotech/shared/transport
+module gitlab.com/zynero/shared/transport
 
 go 1.24.2
 

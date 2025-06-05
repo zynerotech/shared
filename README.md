@@ -8,12 +8,12 @@ package main
 
 import (
 	// ...
-    platformconfig "github.com/zynerotech/shared/config"
-    platformdatabase "github.com/zynerotech/shared/database"
-    platformhealthcheck "github.com/zynerotech/shared/healthcheck"
-    platformlogger "github.com/zynerotech/shared/logger"
-    platformmetrics "github.com/zynerotech/shared/metrics"
-    platformserver "github.com/zynerotech/shared/server"
+    platformconfig "gitlab.com/zynero/shared/config"
+    platformdatabase "gitlab.com/zynero/shared/database"
+    platformhealthcheck "gitlab.com/zynero/shared/healthcheck"
+    platformlogger "gitlab.com/zynero/shared/logger"
+    platformmetrics "gitlab.com/zynero/shared/metrics"
+    platformserver "gitlab.com/zynero/shared/server"
 	// ...
 )
 ````
@@ -26,12 +26,12 @@ import (
 
 ## Тегирование
 ````bash
-git tag cache/v0.1.3
-git tag config/v0.1.3
-git tag database/v0.1.3
-git tag healthcheck/v0.1.3
-git tag logger/v0.1.3
-git tag metrics/v0.1.3
-git tag server/v0.1.3
-git tag transport/v0.1.3
+git tag cache/0.1.4
+git tag config/0.1.4
+git tag database/0.1.4
+git tag healthcheck/0.1.4
+git tag logger/0.1.4
+git tag metrics/0.1.4
+git tag server/0.1.4
+git tag transport/0.1.4
 ````

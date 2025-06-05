@@ -3,7 +3,7 @@ package kafka
 import (
 	"context"
 	json "github.com/bytedance/sonic"
-	"github.com/zynerotech/shared/transport"
+	"gitlab.com/zynero/shared/transport"
 	"time"
 
 	"github.com/rs/zerolog/log"

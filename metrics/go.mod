@@ -1,4 +1,4 @@
-module github.com/zynerotech/shared/metrics
+module gitlab.com/zynero/shared/metrics
 
 go 1.24.2
 

@@ -1,4 +1,4 @@
-module github.com/zynerotech/shared/server
+module gitlab.com/zynero/shared/server
 
 go 1.24.2
 
