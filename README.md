@@ -26,12 +26,12 @@ import (
 
 ## Тегирование
 ````bash
-git tag cache/0.1.4
-git tag config/0.1.4
-git tag database/0.1.4
-git tag healthcheck/0.1.4
-git tag logger/0.1.4
-git tag metrics/0.1.4
-git tag server/0.1.4
-git tag transport/0.1.4
+git tag cache/v0.1.5
+git tag config/v0.1.5
+git tag database/v0.1.5
+git tag healthcheck/v0.1.5
+git tag logger/v0.1.5
+git tag metrics/v0.1.5
+git tag server/v0.1.5
+git tag transport/v0.1.5
 ````
