@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,6 +9,14 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+)
+
+// Custom error types for better error handling
+var (
+	ErrConfigNotFound   = errors.New("config file not found")
+	ErrConfigInvalid    = errors.New("invalid config")
+	ErrConfigValidation = errors.New("config validation failed")
+	ErrConfigUnmarshal  = errors.New("failed to unmarshal config")
 )
 
 const (
@@ -63,17 +72,19 @@ func NewLoader(configPath string) *Loader {
 func (l *Loader) Load(cfg Configurable) error {
 	// Чтение файла конфига
 	if err := l.viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			return fmt.Errorf("%w: %v", ErrConfigNotFound, err)
+		}
 		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	if err := l.viper.UnmarshalExact(cfg); err != nil { // Используем UnmarshalExact
-		fmt.Printf("[DEBUG VIPER in shared/config] Error during UnmarshalExact: %v\n", err) // Доп. логирование
-		return fmt.Errorf("failed to parse config (exact): %w", err)
+	if err := l.viper.UnmarshalExact(cfg); err != nil {
+		return fmt.Errorf("%w: %v", ErrConfigUnmarshal, err)
 	}
 
 	// Проверка конфигурацию
 	if err := cfg.Validate(); err != nil {
-		return fmt.Errorf("config validation failed: %w", err)
+		return fmt.Errorf("%w: %v", ErrConfigValidation, err)
 	}
 
 	return nil
