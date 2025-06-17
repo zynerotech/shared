@@ -24,6 +24,7 @@ type Logger struct {
 
 // New создает новый экземпляр логгера
 func New(cfg Config) (*Logger, error) {
+	cfg = sanitize(&cfg)
 	// Настраиваем уровень логирования
 	level, err := zerolog.ParseLevel(cfg.Level)
 	if err != nil {
@@ -98,9 +99,34 @@ func (l *Logger) With() zerolog.Context {
 	return l.logger.With()
 }
 
+func (l *Logger) SetGlobal() {
+	log.Logger = l.logger
+}
+
 // Global возвращает глобальный логгер
 func Global() *Logger {
 	return &Logger{
 		logger: log.Logger,
 	}
+}
+
+func (l *Logger) Log() zerolog.Logger {
+	return l.logger
+}
+
+// sanitize ensures the Config struct is populated with default values when fields are empty.
+func sanitize(cfg *Config) Config {
+	if cfg.Level == "" {
+		cfg.Level = "info"
+	}
+	if cfg.Format == "" {
+		cfg.Format = "json"
+	}
+	if cfg.Output == "" {
+		cfg.Output = "stdout"
+	}
+	if cfg.TimeFormat == "" {
+		cfg.TimeFormat = time.RFC3339
+	}
+	return *cfg
 }
