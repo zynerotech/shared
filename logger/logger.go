@@ -72,38 +72,32 @@ func New(cfg Config) (*Logger, error) {
 
 // Debug логирует сообщение с уровнем Debug
 func (l *Logger) Debug() *zerolog.Event {
-	checkGlobal(global)
-	return global.Debug()
+	return l.logger.Debug()
 }
 
 // Info логирует сообщение с уровнем Info
 func (l *Logger) Info() *zerolog.Event {
-	checkGlobal(global)
-	return global.Info()
+	return l.logger.Info()
 }
 
 // Warn логирует сообщение с уровнем Warn
 func (l *Logger) Warn() *zerolog.Event {
-	checkGlobal(global)
-	return global.Warn()
+	return l.logger.Warn()
 }
 
 // Error логирует сообщение с уровнем Error
 func (l *Logger) Error() *zerolog.Event {
-	checkGlobal(global)
-	return global.Error()
+	return l.logger.Error()
 }
 
 // Fatal логирует сообщение с уровнем Fatal и завершает программу
 func (l *Logger) Fatal() *zerolog.Event {
-	checkGlobal(global)
-	return global.Fatal()
+	return l.logger.Fatal()
 }
 
 // With возвращает новый логгер с добавленными полями
 func (l *Logger) With() zerolog.Context {
-	checkGlobal(global)
-	return global.With()
+	return l.logger.With()
 }
 
 func SetGlobal(l *Logger) {
@@ -129,10 +123,4 @@ func sanitize(cfg *Config) Config {
 		cfg.TimeFormat = time.RFC3339
 	}
 	return *cfg
-}
-
-func checkGlobal(global *Logger) {
-	if global == nil {
-		panic("logger: global logger is not initialized")
-	}
 }
