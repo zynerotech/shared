@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
+
+var global *Logger
 
 // Config представляет конфигурацию логгера
 type Config struct {
@@ -71,43 +72,42 @@ func New(cfg Config) (*Logger, error) {
 
 // Debug логирует сообщение с уровнем Debug
 func (l *Logger) Debug() *zerolog.Event {
-	return l.logger.Debug()
+	checkGlobal(global)
+	return global.Debug()
 }
 
 // Info логирует сообщение с уровнем Info
 func (l *Logger) Info() *zerolog.Event {
-	return l.logger.Info()
+	checkGlobal(global)
+	return global.Info()
 }
 
 // Warn логирует сообщение с уровнем Warn
 func (l *Logger) Warn() *zerolog.Event {
-	return l.logger.Warn()
+	checkGlobal(global)
+	return global.Warn()
 }
 
 // Error логирует сообщение с уровнем Error
 func (l *Logger) Error() *zerolog.Event {
-	return l.logger.Error()
+	checkGlobal(global)
+	return global.Error()
 }
 
 // Fatal логирует сообщение с уровнем Fatal и завершает программу
 func (l *Logger) Fatal() *zerolog.Event {
-	return l.logger.Fatal()
+	checkGlobal(global)
+	return global.Fatal()
 }
 
 // With возвращает новый логгер с добавленными полями
 func (l *Logger) With() zerolog.Context {
-	return l.logger.With()
+	checkGlobal(global)
+	return global.With()
 }
 
-func (l *Logger) SetGlobal() {
-	log.Logger = l.logger
-}
-
-// Global возвращает глобальный логгер
-func Global() *Logger {
-	return &Logger{
-		logger: log.Logger,
-	}
+func SetGlobal(l *Logger) {
+	global = l
 }
 
 func (l *Logger) Log() zerolog.Logger {
@@ -129,4 +129,10 @@ func sanitize(cfg *Config) Config {
 		cfg.TimeFormat = time.RFC3339
 	}
 	return *cfg
+}
+
+func checkGlobal(global *Logger) {
+	if global == nil {
+		panic("logger: global logger is not initialized")
+	}
 }
