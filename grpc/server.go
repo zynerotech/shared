@@ -70,7 +70,11 @@ func NewServer(cfg Config, l *platformlogger.Logger, opts ...grpc.ServerOption) 
 		serverOpts = append(serverOpts, grpc.Creds(creds))
 	}
 
-	serverOpts = append(serverOpts, opts...)
+	for _, opt := range opts {
+		if opt != nil {
+			serverOpts = append(serverOpts, opt)
+		}
+	}
 
 	srv := grpc.NewServer(serverOpts...)
 	return &Server{srv: srv, config: cfg}, nil
