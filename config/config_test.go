@@ -201,7 +201,7 @@ debug: true
 
 		err = loader.Load(cfg)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to parse config")
+		assert.Contains(t, err.Error(), "failed to unmarshal config")
 	})
 
 	t.Run("validation failure", func(t *testing.T) {
