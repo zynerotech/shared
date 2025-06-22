@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_prom "github.com/grpc-ecosystem/go-grpc-prometheus"
 	platformlogger "gitlab.com/zynero/shared/logger"
 	"google.golang.org/grpc"
@@ -70,7 +70,11 @@ func NewServer(cfg Config, l *platformlogger.Logger, opts ...grpc.ServerOption) 
 		serverOpts = append(serverOpts, grpc.Creds(creds))
 	}
 
-	serverOpts = append(serverOpts, opts...)
+	for _, opt := range opts {
+		if opt != nil {
+			serverOpts = append(serverOpts, opt)
+		}
+	}
 
 	srv := grpc.NewServer(serverOpts...)
 	return &Server{srv: srv, config: cfg}, nil
