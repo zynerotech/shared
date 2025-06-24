@@ -189,8 +189,6 @@ gitlab.com/zynero/shared/grpc v0.1.1 h1:1js57xMytHFSwyXr25flO+I9QFEoe1J5ZUJmFERr
 gitlab.com/zynero/shared/grpc v0.1.1/go.mod h1:sE9XfO49tX3LR+kpjOdQJiD70ObPHkd/rdJ1VmmYEZI=
 gitlab.com/zynero/shared/healthcheck v0.1.5 h1:DEEMfOWNwWX0xzBU2BKI8vZVUIHrmLv0/85iU48ai/E=
 gitlab.com/zynero/shared/healthcheck v0.1.5/go.mod h1:qNd/CP6MuzZN8z2orUn5r6ZbhIcceTChl57ukX6GFVA=
-gitlab.com/zynero/shared/logger v0.1.9 h1:igXU1RbbGx4ZWZ0A1IfkWQyiOBOJnyUQ0HvHNgaP8bo=
-gitlab.com/zynero/shared/logger v0.1.9/go.mod h1:zz7f/gSih5ZTMT9Ib3+QXblyTkX77jWM2km9tlo1MOQ=
 gitlab.com/zynero/shared/metrics v0.1.5 h1:ijWJ+G4PNzBE10XdwY1VisSJNbODxOytkidwLTdEju4=
 gitlab.com/zynero/shared/metrics v0.1.5/go.mod h1:9OUjq4nnb5BZZCi6fOgZlucaz/yTwKNpb8avFb+TrGo=
 gitlab.com/zynero/shared/server v0.1.5 h1:P8kOAavtVNs6HuRbwbYD+g1FmWbrZ+andUsdkD3N4EI=

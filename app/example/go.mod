@@ -1,17 +1,10 @@
-module gitlab.com/zynero/shared/app
+module app_example
 
 go 1.24.2
 
 require (
-	gitlab.com/zynero/shared/cache v0.1.5
-	gitlab.com/zynero/shared/config v0.1.6
-	gitlab.com/zynero/shared/database v0.1.5
-	gitlab.com/zynero/shared/grpc v0.1.1
-	gitlab.com/zynero/shared/healthcheck v0.1.5
+	gitlab.com/zynero/shared/app v0.0.0
 	gitlab.com/zynero/shared/logger v0.1.9
-	gitlab.com/zynero/shared/metrics v0.1.5
-	gitlab.com/zynero/shared/server v0.1.5
-	gitlab.com/zynero/shared/transport v0.1.5
 )
 
 require (
@@ -61,6 +54,14 @@ require (
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
+	gitlab.com/zynero/shared/cache v0.1.5 // indirect
+	gitlab.com/zynero/shared/config v0.1.6 // indirect
+	gitlab.com/zynero/shared/database v0.1.5 // indirect
+	gitlab.com/zynero/shared/grpc v0.1.1 // indirect
+	gitlab.com/zynero/shared/healthcheck v0.1.5 // indirect
+	gitlab.com/zynero/shared/metrics v0.1.5 // indirect
+	gitlab.com/zynero/shared/server v0.1.5 // indirect
+	gitlab.com/zynero/shared/transport v0.1.5 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/arch v0.18.0 // indirect
@@ -73,4 +74,9 @@ require (
 	google.golang.org/grpc v1.73.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+)
+
+replace (
+	gitlab.com/zynero/shared/app => ../
+	gitlab.com/zynero/shared/logger => ../../logger
 )
