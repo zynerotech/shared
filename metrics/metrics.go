@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	platformlogger "gitlab.com/zynero/shared/logger"
 )
 
 // Config представляет конфигурацию метрик
@@ -76,7 +77,7 @@ func New(cfg Config) (*Metrics, error) {
 	}
 
 	go func() {
-		fmt.Printf("Starting metrics server on %s\n", m.server.Addr)
+		platformlogger.Info().Msgf("Starting metrics server on %s", m.server.Addr)
 		if err := m.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			panic(fmt.Sprintf("Failed to start metrics server: %v", err))
 		}

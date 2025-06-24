@@ -5,6 +5,7 @@ go 1.24.2
 require (
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/prometheus/client_golang v1.22.0
+	gitlab.com/zynero/shared/logger v0.1.10
 )
 
 require (
@@ -21,6 +22,7 @@ require (
 	github.com/prometheus/common v0.64.0 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.62.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
