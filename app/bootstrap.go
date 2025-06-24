@@ -2,8 +2,9 @@ package app
 
 import (
 	"fmt"
+	"os"
+
 	platformcache "gitlab.com/zynero/shared/cache"
-	platformconfig "gitlab.com/zynero/shared/config"
 	platformdatabase "gitlab.com/zynero/shared/database"
 	platformgrpc "gitlab.com/zynero/shared/grpc"
 	platformhealthcheck "gitlab.com/zynero/shared/healthcheck"
@@ -11,7 +12,6 @@ import (
 	platformmetrics "gitlab.com/zynero/shared/metrics"
 	platformserver "gitlab.com/zynero/shared/server"
 	"gitlab.com/zynero/shared/transport/kafka"
-	"os"
 )
 
 // ConfigProvider describes configuration required to bootstrap common
@@ -20,16 +20,22 @@ import (
 type ConfigProvider interface {
 	Validate() error
 	LoggerConfig() platformlogger.Config
-	MetricsConfig() platformmetrics.Config
-	HealthcheckConfig() platformhealthcheck.Config
-	ServerConfig() platformserver.Config
-	DatabaseConfig() platformdatabase.Config
-	CacheConfig() platformcache.Config
-	KafkaConfig() kafka.Config
-	GRPCConfig() platformgrpc.Config
+}
+
+// OptionalConfigProvider describes optional configuration methods that may not be implemented
+// by all services. These methods should return nil if the component is not needed.
+type OptionalConfigProvider interface {
+	MetricsConfig() *platformmetrics.Config
+	HealthcheckConfig() *platformhealthcheck.Config
+	ServerConfig() *platformserver.Config
+	DatabaseConfig() *platformdatabase.Config
+	CacheConfig() *platformcache.Config
+	KafkaConfig() *kafka.Config
+	GRPCConfig() *platformgrpc.Config
 }
 
 // App contains initialized shared components used across applications.
+// Only Logger is guaranteed to be present, other components may be nil.
 type App struct {
 	Config         ConfigProvider
 	Logger         *platformlogger.Logger
@@ -42,77 +48,234 @@ type App struct {
 	EventPublisher *kafka.KafkaEventPublisher
 }
 
-// New initializes all common infrastructure services based on the provided configuration
-func New(cfg ConfigProvider) (*App, error) {
-	// Инициализируем логгер с поддержкой глобальной конфигурации
-	var logger *platformlogger.Logger
-	var err error
+// AppBuilder provides a fluent interface for building App instances
+type AppBuilder struct {
+	config         ConfigProvider
+	logger         *platformlogger.Logger
+	metrics        *platformmetrics.Metrics
+	healthcheck    *platformhealthcheck.Healthcheck
+	server         *platformserver.Server
+	grpcServer     *platformgrpc.Server
+	database       *platformdatabase.Database
+	cache          platformcache.Cache
+	eventPublisher *kafka.KafkaEventPublisher
+	errors         []error
+}
 
-	logger, err = platformlogger.New(cfg.LoggerConfig())
-	if err != nil {
-		return nil, fmt.Errorf("init logger: %w", err)
+// NewBuilder creates a new AppBuilder with the given configuration
+func NewBuilder(cfg ConfigProvider) *AppBuilder {
+	return &AppBuilder{
+		config: cfg,
+		errors: make([]error, 0),
 	}
+}
+
+// WithLogger initializes the logger (required component)
+func (b *AppBuilder) WithLogger() *AppBuilder {
+	if b.logger != nil {
+		return b
+	}
+
+	logger, err := platformlogger.New(b.config.LoggerConfig())
+	if err != nil {
+		b.errors = append(b.errors, fmt.Errorf("init logger: %w", err))
+		return b
+	}
+
 	platformlogger.SetGlobal(logger)
+	b.logger = logger
+	platformlogger.Info().Msg("Logger initialized")
+	return b
+}
 
-	// Логируем информацию о запуске приложения
-	platformlogger.Info().Msg("Initializing application components")
-
-	metrics, err := platformmetrics.New(cfg.MetricsConfig())
-	if err != nil {
-		return nil, fmt.Errorf("init metrics: %w", err)
+// WithMetrics initializes metrics if configuration is provided
+func (b *AppBuilder) WithMetrics() *AppBuilder {
+	if b.metrics != nil {
+		return b
 	}
-	platformlogger.Info().Msg("Metrics initialized")
 
-	health, err := platformhealthcheck.New(cfg.HealthcheckConfig())
-	if err != nil {
-		return nil, fmt.Errorf("init healthcheck: %w", err)
+	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
+		if cfg := optCfg.MetricsConfig(); cfg != nil {
+			metrics, err := platformmetrics.New(*cfg)
+			if err != nil {
+				b.errors = append(b.errors, fmt.Errorf("init metrics: %w", err))
+				return b
+			}
+			b.metrics = metrics
+			platformlogger.Info().Msg("Metrics initialized")
+		}
 	}
-	platformlogger.Info().Msg("Healthcheck initialized")
+	return b
+}
 
-	server, err := platformserver.New(cfg.ServerConfig())
-	if err != nil {
-		return nil, fmt.Errorf("init server: %w", err)
+// WithHealthcheck initializes healthcheck if configuration is provided
+func (b *AppBuilder) WithHealthcheck() *AppBuilder {
+	if b.healthcheck != nil {
+		return b
 	}
-	platformlogger.Info().Msg("HTTP server initialized")
 
-	cache, err := platformcache.New(cfg.CacheConfig())
-	if err != nil {
-		return nil, fmt.Errorf("init cache: %w", err)
+	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
+		if cfg := optCfg.HealthcheckConfig(); cfg != nil {
+			health, err := platformhealthcheck.New(*cfg)
+			if err != nil {
+				b.errors = append(b.errors, fmt.Errorf("init healthcheck: %w", err))
+				return b
+			}
+			b.healthcheck = health
+			platformlogger.Info().Msg("Healthcheck initialized")
+		}
 	}
-	platformlogger.Info().Msg("Cache initialized")
+	return b
+}
 
-	db, err := platformdatabase.New(cfg.DatabaseConfig())
-	if err != nil {
-		return nil, fmt.Errorf("init database: %w", err)
+// WithServer initializes HTTP server if configuration is provided
+func (b *AppBuilder) WithServer() *AppBuilder {
+	if b.server != nil {
+		return b
 	}
-	platformlogger.Info().Msg("Database initialized")
 
-	producer, err := kafka.NewProducer(cfg.KafkaConfig())
-	if err != nil {
-		return nil, fmt.Errorf("init kafka producer: %w", err)
+	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
+		if cfg := optCfg.ServerConfig(); cfg != nil {
+			server, err := platformserver.New(*cfg)
+			if err != nil {
+				b.errors = append(b.errors, fmt.Errorf("init server: %w", err))
+				return b
+			}
+			b.server = server
+			platformlogger.Info().Msg("HTTP server initialized")
+		}
 	}
-	publisher := kafka.NewKafkaEventPublisher(producer, cfg.KafkaConfig().Producer.Topic)
-	platformlogger.Info().Msg("Kafka producer initialized")
+	return b
+}
 
-	grpcServer, err := platformgrpc.NewServer(cfg.GRPCConfig(), logger, nil)
-	if err != nil {
-		return nil, fmt.Errorf("init grpc server: %w", err)
+// WithDatabase initializes database if configuration is provided
+func (b *AppBuilder) WithDatabase() *AppBuilder {
+	if b.database != nil {
+		return b
 	}
-	platformlogger.Info().Msg("gRPC server initialized")
 
-	platformlogger.Info().Msg("All application components initialized successfully")
+	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
+		if cfg := optCfg.DatabaseConfig(); cfg != nil {
+			db, err := platformdatabase.New(*cfg)
+			if err != nil {
+				b.errors = append(b.errors, fmt.Errorf("init database: %w", err))
+				return b
+			}
+			b.database = db
+			platformlogger.Info().Msg("Database initialized")
+		}
+	}
+	return b
+}
+
+// WithCache initializes cache if configuration is provided
+func (b *AppBuilder) WithCache() *AppBuilder {
+	if b.cache != nil {
+		return b
+	}
+
+	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
+		if cfg := optCfg.CacheConfig(); cfg != nil {
+			cache, err := platformcache.New(*cfg)
+			if err != nil {
+				b.errors = append(b.errors, fmt.Errorf("init cache: %w", err))
+				return b
+			}
+			b.cache = cache
+			platformlogger.Info().Msg("Cache initialized")
+		}
+	}
+	return b
+}
+
+// WithKafka initializes Kafka producer and event publisher if configuration is provided
+func (b *AppBuilder) WithKafka() *AppBuilder {
+	if b.eventPublisher != nil {
+		return b
+	}
+
+	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
+		if cfg := optCfg.KafkaConfig(); cfg != nil {
+			producer, err := kafka.NewProducer(*cfg)
+			if err != nil {
+				b.errors = append(b.errors, fmt.Errorf("init kafka producer: %w", err))
+				return b
+			}
+			publisher := kafka.NewKafkaEventPublisher(producer, cfg.Producer.Topic)
+			b.eventPublisher = publisher
+			platformlogger.Info().Msg("Kafka producer initialized")
+		}
+	}
+	return b
+}
+
+// WithGRPC initializes gRPC server if configuration is provided
+func (b *AppBuilder) WithGRPC() *AppBuilder {
+	if b.grpcServer != nil {
+		return b
+	}
+
+	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
+		if cfg := optCfg.GRPCConfig(); cfg != nil {
+			grpcServer, err := platformgrpc.NewServer(*cfg, b.logger, nil)
+			if err != nil {
+				b.errors = append(b.errors, fmt.Errorf("init grpc server: %w", err))
+				return b
+			}
+			b.grpcServer = grpcServer
+			platformlogger.Info().Msg("gRPC server initialized")
+		}
+	}
+	return b
+}
+
+// WithAll initializes all available components based on configuration
+func (b *AppBuilder) WithAll() *AppBuilder {
+	return b.WithLogger().
+		WithMetrics().
+		WithHealthcheck().
+		WithServer().
+		WithDatabase().
+		WithCache().
+		WithKafka().
+		WithGRPC()
+}
+
+// Build creates the App instance and returns any errors that occurred during initialization
+func (b *AppBuilder) Build() (*App, error) {
+	// Logger is required
+	if b.logger == nil {
+		b.WithLogger()
+	}
+
+	if len(b.errors) > 0 {
+		return nil, fmt.Errorf("failed to build app: %v", b.errors)
+	}
+
+	platformlogger.Info().Msg("All requested application components initialized successfully")
 
 	return &App{
-		Config:         cfg,
-		Logger:         logger,
-		Metrics:        metrics,
-		Healthcheck:    health,
-		Server:         server,
-		GRPCServer:     grpcServer,
-		Database:       db,
-		Cache:          cache,
-		EventPublisher: publisher,
+		Config:         b.config,
+		Logger:         b.logger,
+		Metrics:        b.metrics,
+		Healthcheck:    b.healthcheck,
+		Server:         b.server,
+		GRPCServer:     b.grpcServer,
+		Database:       b.database,
+		Cache:          b.cache,
+		EventPublisher: b.eventPublisher,
 	}, nil
+}
+
+// New initializes all common infrastructure services based on the provided configuration
+// This is a convenience method that initializes all components (legacy behavior)
+func New(cfg ConfigProvider) (*App, error) {
+	return NewBuilder(cfg).WithAll().Build()
+}
+
+// NewWithLogger initializes only the logger (minimal setup)
+func NewWithLogger(cfg ConfigProvider) (*App, error) {
+	return NewBuilder(cfg).WithLogger().Build()
 }
 
 // Close stops metrics, health checks and closes database connections.
@@ -123,36 +286,29 @@ func (a *App) Close() error {
 
 	platformlogger.Info().Msg("Shutting down application components")
 
-	a.Database.Close()
-	platformlogger.Info().Msg("Database connection closed")
-
-	if err := a.Metrics.Stop(); err != nil {
-		platformlogger.Error().Err(err).Msg("Failed to stop metrics")
-		return err
+	if a.Database != nil {
+		a.Database.Close()
+		platformlogger.Info().Msg("Database connection closed")
 	}
-	platformlogger.Info().Msg("Metrics stopped")
 
-	if err := a.Healthcheck.Stop(); err != nil {
-		platformlogger.Error().Err(err).Msg("Failed to stop healthcheck")
-		return err
+	if a.Metrics != nil {
+		if err := a.Metrics.Stop(); err != nil {
+			platformlogger.Error().Err(err).Msg("Failed to stop metrics")
+			return err
+		}
+		platformlogger.Info().Msg("Metrics stopped")
 	}
-	platformlogger.Info().Msg("Healthcheck stopped")
+
+	if a.Healthcheck != nil {
+		if err := a.Healthcheck.Stop(); err != nil {
+			platformlogger.Error().Err(err).Msg("Failed to stop healthcheck")
+			return err
+		}
+		platformlogger.Info().Msg("Healthcheck stopped")
+	}
 
 	platformlogger.Info().Msg("Application shutdown completed")
 	return nil
-}
-
-// BootstrapWithConfig загружает конфигурацию из файла и инициализирует приложение.
-// Эта функция объединяет загрузку конфигурации и инициализацию в одном месте,
-// что устраняет дублирование кода в точках входа.
-func BootstrapWithConfig(cfg ConfigProvider, configPath string) (*App, error) {
-	// Загружаем конфигурацию из файла
-	if err := platformconfig.Load(cfg, configPath); err != nil {
-		return nil, fmt.Errorf("failed to load config: %w", err)
-	}
-
-	// Инициализируем приложение
-	return New(cfg)
 }
 
 // getEnvironment определяет окружение приложения

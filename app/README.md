@@ -1,282 +1,234 @@
 # App Bootstrap Package
 
-Пакет `app` предоставляет унифицированный способ инициализации всех общих компонентов инфраструктуры для микросервисов, включая **расширенную интеграцию с глобальным логгером**.
+Пакет `app` предоставляет унифицированный и гибкий способ инициализации общих компонентов инфраструктуры для микросервисов. Теперь поддерживает **опциональные компоненты** - по умолчанию инициализируется только логирование, а остальные компоненты подключаются по необходимости.
 
 ## 🚀 Новые возможности
 
-### Глобальная конфигурация логгера
-- **Автоматическая инициализация** глобального логгера с метаданными приложения
-- **Компонентное логирование** с индивидуальными настройками для каждого компонента
-- **Динамическое управление** уровнями логирования и глобальными полями
+### Гибкая архитектура с опциональными компонентами
+- **Минимальная инициализация** - только логгер по умолчанию
+- **Выборочное подключение** компонентов через Builder паттерн
 - **Обратная совместимость** с существующими конфигурациями
+- **Типобезопасность** - проверка наличия компонентов на этапе компиляции
+
+### Паттерн Builder
+- **Fluent API** для удобного конфигурирования
+- **Цепочка методов** для выборочного подключения компонентов
+- **Обработка ошибок** на этапе сборки
 
 ## Основные компоненты
 
-Пакет инициализирует следующие общие компоненты:
-- Logger (логирование)
-- Metrics (метрики)
-- Healthcheck (проверка здоровья)
-- Server (HTTP сервер)
-- GRPC Server (gRPC сервер)
-- Database (база данных)
-- Cache (кэш)
-- EventPublisher (издатель событий)
+Пакет может инициализировать следующие компоненты (все опциональные, кроме Logger):
+- **Logger** (логирование) - **обязательный компонент**
+- Metrics (метрики) - опциональный
+- Healthcheck (проверка здоровья) - опциональный
+- Server (HTTP сервер) - опциональный
+- GRPC Server (gRPC сервер) - опциональный
+- Database (база данных) - опциональный
+- Cache (кэш) - опциональный
+- EventPublisher (издатель событий) - опциональный
 
-## 📋 Интерфейс ConfigProvider
+## 📋 Интерфейсы конфигурации
 
+### ConfigProvider (обязательный)
 ```go
 type ConfigProvider interface {
     Validate() error
     LoggerConfig() platformlogger.Config
-    GlobalLoggerConfig() *platformlogger.GlobalConfig
-    MetricsConfig() platformmetrics.Config
-    HealthcheckConfig() platformhealthcheck.Config
-    ServerConfig() platformserver.Config
-    DatabaseConfig() platformdatabase.Config
-    CacheConfig() platformcache.Config
-    KafkaConfig() kafka.Config
-    GRPCConfig() platformgrpc.Config
 }
 ```
+
+### OptionalConfigProvider (опциональный)
+```go
+type OptionalConfigProvider interface {
+    MetricsConfig() *platformmetrics.Config
+    HealthcheckConfig() *platformhealthcheck.Config
+    ServerConfig() *platformserver.Config
+    DatabaseConfig() *platformdatabase.Config
+    CacheConfig() *platformcache.Config
+    KafkaConfig() *kafka.Config
+    GRPCConfig() *platformgrpc.Config
+}
+```
+
+**Важно**: Методы `OptionalConfigProvider` должны возвращать `nil`, если компонент не нужен.
 
 ## 🎯 Способы использования
 
-### 1. Автоматическая глобальная конфигурация (рекомендуется)
+### 1. Минимальная инициализация (только логгер)
 
 ```go
-package main
-
-import (
-    "gitlab.com/zynero/shared/app"
-    "gitlab.com/zynero/shared/logger"
-)
-
-type AppConfig struct {
-    Logger logger.Config `mapstructure:"logger"`
-    // ... другие конфигурации
+type Config struct {
+    Logger platformlogger.Config `mapstructure:"logger"`
 }
 
-func (c *AppConfig) Validate() error { return nil }
-func (c *AppConfig) LoggerConfig() logger.Config { return c.Logger }
-func (c *AppConfig) GlobalLoggerConfig() *logger.GlobalConfig { return nil } // Автоматическая генерация
+func (c Config) Validate() error { return nil }
+func (c Config) LoggerConfig() platformlogger.Config { return c.Logger }
 
-func main() {
-    cfg := &AppConfig{
-        Logger: logger.Config{
-            Level:      "debug",
-            Format:     "console",
-            Output:     "stdout",
-            CallerInfo: true,
-        },
-    }
-
-    // 🌟 Автоматически создает глобальную конфигурацию
-    application, err := app.BootstrapWithGlobalConfig(cfg, "config.yaml", "user-service", "1.0.0")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer application.Close()
-
-    // Теперь во всех пакетах можно использовать глобальный логгер
-    logger.Info().Msg("Application started")
-    logger.Component("database").Info().Msg("Database connected")
+// Инициализация
+app, err := app.NewWithLogger(cfg)
+if err != nil {
+    log.Fatal(err)
 }
+defer app.Close()
 ```
 
-### 2. Предустановленная глобальная конфигурация
+### 2. Выборочное подключение компонентов
 
 ```go
-type AppConfig struct {
-    Logger    logger.Config         `mapstructure:"logger"`
-    GlobalLog *logger.GlobalConfig  `mapstructure:"global_logger"`
+type Config struct {
+    Logger    platformlogger.Config `mapstructure:"logger"`
+    Metrics   *platformmetrics.Config `mapstructure:"metrics"`
+    Database  *platformdatabase.Config `mapstructure:"database"`
 }
 
-func (c *AppConfig) GlobalLoggerConfig() *logger.GlobalConfig {
-    return c.GlobalLog
-}
+func (c Config) Validate() error { return nil }
+func (c Config) LoggerConfig() platformlogger.Config { return c.Logger }
+func (c Config) MetricsConfig() *platformmetrics.Config { return c.Metrics }
+func (c Config) DatabaseConfig() *platformdatabase.Config { return c.Database }
 
-func main() {
-    cfg := &AppConfig{
-        Logger: logger.Config{Level: "info", Format: "json"},
-        GlobalLog: &logger.GlobalConfig{
-            Logger: logger.Config{
-                Level:      "debug",
-                Format:     "console",
-                CallerInfo: true,
-            },
-            Application: logger.ApplicationInfo{
-                Name:        "user-service",
-                Version:     "1.0.0",
-                Environment: "production",
-                Instance:    "server-01",
-            },
-            GlobalFields: map[string]any{
-                "service_type": "microservice",
-                "region":      "us-east-1",
-            },
-            Components: map[string]logger.ComponentConfig{
-                "database": {
-                    Level: "warn",
-                    Fields: map[string]any{"db_type": "postgres"},
-                },
-                "api": {
-                    Level: "debug",
-                    Fields: map[string]any{"api_version": "v1"},
-                },
-            },
-        },
-    }
-
-    application, err := app.BootstrapWithConfig(cfg, "config.yaml")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer application.Close()
+// Инициализация через Builder
+app, err := app.NewBuilder(cfg).
+    WithLogger().
+    WithMetrics().
+    WithDatabase().
+    Build()
+if err != nil {
+    log.Fatal(err)
 }
+defer app.Close()
 ```
 
-### 3. Обратная совместимость
+### 3. Все компоненты (legacy поведение)
 
 ```go
-// Старый способ продолжает работать
-func (c *AppConfig) GlobalLoggerConfig() *logger.GlobalConfig {
-    return nil // Используется старый способ инициализации
+type Config struct {
+    Logger      platformlogger.Config `mapstructure:"logger"`
+    Metrics     platformmetrics.Config `mapstructure:"metrics"`
+    Healthcheck platformhealthcheck.Config `mapstructure:"healthcheck"`
+    Server      platformserver.Config `mapstructure:"server"`
+    Database    platformdatabase.Config `mapstructure:"database"`
+    Cache       platformcache.Config `mapstructure:"cache"`
+    Kafka       kafka.Config `mapstructure:"kafka"`
+    GRPC        platformgrpc.Config `mapstructure:"grpc"`
 }
 
-application, err := app.BootstrapWithConfig(cfg, "config.yaml")
+func (c Config) Validate() error { return nil }
+func (c Config) LoggerConfig() platformlogger.Config { return c.Logger }
+func (c Config) MetricsConfig() *platformmetrics.Config { return &c.Metrics }
+func (c Config) HealthcheckConfig() *platformhealthcheck.Config { return &c.Healthcheck }
+func (c Config) ServerConfig() *platformserver.Config { return &c.Server }
+func (c Config) DatabaseConfig() *platformdatabase.Config { return &c.Database }
+func (c Config) CacheConfig() *platformcache.Config { return &c.Cache }
+func (c Config) KafkaConfig() *kafka.Config { return &c.Kafka }
+func (c Config) GRPCConfig() *platformgrpc.Config { return &c.GRPC }
+
+// Инициализация всех компонентов
+app, err := app.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer app.Close()
 ```
 
-## 🔧 Автоматическая глобальная конфигурация
-
-При использовании `BootstrapWithGlobalConfig` автоматически создается:
+### 4. Загрузка конфигурации из файла
 
 ```go
-globalCfg := logger.GlobalConfig{
-    Logger: cfg.LoggerConfig(),
-    Application: logger.ApplicationInfo{
-        Name:        appName,        // переданный параметр
-        Version:     appVersion,     // переданный параметр
-        Environment: getEnvironment(), // из ENV переменных
-        Instance:    hostname,       // автоматически определяется
-    },
-    GlobalFields: map[string]any{
-        "service_type": "microservice",
-        "startup_time": time.Now().Format(time.RFC3339),
-    },
-    Components: map[string]logger.ComponentConfig{
-        "app":      {Level: "info"},
-        "database": {Level: "warn", Fields: map[string]any{"component_type": "database"}},
-        "cache":    {Level: "info", Fields: map[string]any{"component_type": "cache"}},
-        "kafka":    {Level: "info", Fields: map[string]any{"component_type": "message_broker"}},
-        "grpc":     {Level: "info", Fields: map[string]any{"component_type": "grpc_server"}},
-        "http":     {Level: "info", Fields: map[string]any{"component_type": "http_server"}},
-    },
+// Минимальная инициализация с загрузкой конфигурации
+app, err := app.BootstrapWithConfigAndLogger(cfg, "config.yaml")
+if err != nil {
+    log.Fatal(err)
+}
+defer app.Close()
+
+// Полная инициализация с загрузкой конфигурации
+app, err := app.BootstrapWithConfig(cfg, "config.yaml")
+if err != nil {
+    log.Fatal(err)
+}
+defer app.Close()
+```
+
+## 🔧 Builder API
+
+### Доступные методы
+- `WithLogger()` - инициализирует логгер (обязательный)
+- `WithMetrics()` - инициализирует метрики (если конфигурация предоставлена)
+- `WithHealthcheck()` - инициализирует healthcheck (если конфигурация предоставлена)
+- `WithServer()` - инициализирует HTTP сервер (если конфигурация предоставлена)
+- `WithDatabase()` - инициализирует базу данных (если конфигурация предоставлена)
+- `WithCache()` - инициализирует кэш (если конфигурация предоставлена)
+- `WithKafka()` - инициализирует Kafka producer (если конфигурация предоставлена)
+- `WithGRPC()` - инициализирует gRPC сервер (если конфигурация предоставлена)
+- `WithAll()` - инициализирует все доступные компоненты
+- `Build()` - создает экземпляр App
+
+### Пример цепочки методов
+```go
+app, err := app.NewBuilder(cfg).
+    WithLogger().
+    WithMetrics().
+    WithServer().
+    WithDatabase().
+    Build()
+```
+
+## 🛡️ Безопасность компонентов
+
+Все компоненты в структуре `App` могут быть `nil`. Всегда проверяйте их наличие перед использованием:
+
+```go
+if app.Metrics != nil {
+    // Использование метрик
+}
+
+if app.Database != nil {
+    // Работа с базой данных
+}
+
+if app.Server != nil {
+    // Запуск HTTP сервера
 }
 ```
 
-## 📊 Логирование в bootstrap
+## 📝 Пример конфигурации YAML
 
-Обновленный bootstrap автоматически логирует все этапы инициализации:
+```yaml
+# Минимальная конфигурация (только логгер)
+logger:
+  level: info
+  format: json
+  output: stdout
 
-```
-2025-06-25T01:20:57+03:00 INF > Initializing application components 
-  app_name=demo-service app_version=1.0.0 component=app environment=development
+# Опциональные компоненты (подключаются только если нужны)
+metrics:
+  enabled: true
+  path: /metrics
+  port: 9090
 
-2025-06-25T01:20:57+03:00 WRN > Database connection established 
-  app_name=demo-service component=database component_type=database
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: password
+  dbname: myapp
 
-2025-06-25T01:20:57+03:00 INF > All components initialized successfully 
-  app_name=demo-service environment=development
-```
-
-## 🎛️ Динамическое управление
-
-После инициализации можно динамически управлять логгером:
-
-```go
-// Обновление глобальных полей
-logger.UpdateGlobalFields(map[string]any{
-    "request_id": "req-12345",
-    "user_id":    "user-67890",
-})
-
-// Изменение уровня компонента
-logger.SetComponentLevel("database", "debug")
-
-// Просмотр информации
-components := logger.ListComponents()
-level := logger.GetComponentLevel("database")
-config := logger.GetGlobalConfig()
+server:
+  address: :8080
+  read_timeout: 30s
+  write_timeout: 30s
 ```
 
-## 🔍 Определение окружения
+## 🔄 Миграция с предыдущих версий
 
-Автоматически определяется из переменных окружения:
-1. `ENVIRONMENT` 
-2. `ENV`
-3. По умолчанию: `"development"`
+Для существующих проектов достаточно изменить возвращаемые типы в методах конфигурации:
 
-## 📁 Структура проекта
-
-```
-app/
-├── bootstrap.go           # Основной файл с обновленной логикой
-├── example/              # Примеры использования
-│   ├── main.go           # Полный пример с интерфейсами
-│   ├── simple_example.go # Упрощенный пример
-│   └── go.mod
-└── README.md             # Эта документация
-```
-
-## 🚀 Преимущества
-
-### ✅ Централизованное управление
-- **Одна точка конфигурации** в bootstrap
-- **Автоматическое распространение** на все компоненты
-- **Единообразие** логирования во всем приложении
-
-### ✅ Контекстная информация
-- **Метаданные приложения** во всех сообщениях
-- **Компонентная трассировка** с автоматическими полями
-- **Инфраструктурная информация** (регион, кластер, инстанс)
-
-### ✅ Гранулярное управление
-- **Разные уровни** для разных компонентов
-- **Специфические поля** для каждого компонента
-- **Динамическое изменение** в рантайме
-
-### ✅ Обратная совместимость
-- **Существующий код** продолжает работать
-- **Постепенная миграция** на новые возможности
-- **Гибкость** в выборе способа конфигурации
-
-## 🔄 Миграция
-
-### С существующего кода:
-1. **Добавьте метод** `GlobalLoggerConfig()` в ваш `ConfigProvider`
-2. **Замените вызов** `BootstrapWithConfig` на `BootstrapWithGlobalConfig`
-3. **Используйте компонентные логгеры** в ваших пакетах
-
-### Пример миграции:
 ```go
 // Было
-func (c *Config) GlobalLoggerConfig() *logger.GlobalConfig {
-    return nil // старый способ
-}
-app.BootstrapWithConfig(cfg, "config.yaml")
+func (c Config) MetricsConfig() platformmetrics.Config { return c.Metrics }
 
 // Стало
-func (c *Config) GlobalLoggerConfig() *logger.GlobalConfig {
-    return nil // автоматическая генерация
-}
-app.BootstrapWithGlobalConfig(cfg, "config.yaml", "my-service", "1.0.0")
+func (c Config) MetricsConfig() *platformmetrics.Config { return &c.Metrics }
 ```
 
-## 🎯 Лучшие практики
-
-1. **Используйте `BootstrapWithGlobalConfig`** для новых приложений
-2. **Определяйте компоненты** в конфигурации для лучшей организации
-3. **Используйте компонентные логгеры** в соответствующих пакетах
-4. **Добавляйте контекстные поля** для трассировки
-5. **Настраивайте уровни** в зависимости от окружения
+Или использовать новый Builder API для более гибкого контроля.
 

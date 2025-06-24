@@ -1,0 +1,7 @@
+gitlab.com/zynero/shared/cache v0.1.5/go.mod h1:zWm8nMVOuM/3WkMmd4NQVzO/H0hc2yc55tLqkytd6HU=
+gitlab.com/zynero/shared/database v0.1.5/go.mod h1:6Ujo6Ej8sw/Q/R5kRLpowW7dOeHFeRcoXuwyNe17nBo=
+gitlab.com/zynero/shared/healthcheck v0.1.5/go.mod h1:qNd/CP6MuzZN8z2orUn5r6ZbhIcceTChl57ukX6GFVA=
+gitlab.com/zynero/shared/logger v0.1.10/go.mod h1:zz7f/gSih5ZTMT9Ib3+QXblyTkX77jWM2km9tlo1MOQ=
+gitlab.com/zynero/shared/metrics v0.1.5/go.mod h1:9OUjq4nnb5BZZCi6fOgZlucaz/yTwKNpb8avFb+TrGo=
+gitlab.com/zynero/shared/server v0.1.5/go.mod h1:47IEFKUFHmbd4SKJnlVXIlUzHfbxYld5gyd7zIkm0V8=
+gitlab.com/zynero/shared/transport v0.1.5/go.mod h1:zI6UB1GIFcHV77s1u/xva4gwzqM4jhjn6goOiKei0NE=
