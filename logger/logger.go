@@ -156,32 +156,32 @@ func (l *Logger) GetLevel() zerolog.Level {
 // Printf-style Methods для Logger
 
 // Debugf логирует форматированное сообщение с уровнем Debug
-func (l *Logger) Debugf(format string, v ...interface{}) {
+func (l *Logger) Debugf(format string, v ...any) {
 	l.logger.Debug().Msgf(format, v...)
 }
 
 // Infof логирует форматированное сообщение с уровнем Info
-func (l *Logger) Infof(format string, v ...interface{}) {
+func (l *Logger) Infof(format string, v ...any) {
 	l.logger.Info().Msgf(format, v...)
 }
 
 // Warnf логирует форматированное сообщение с уровнем Warn
-func (l *Logger) Warnf(format string, v ...interface{}) {
+func (l *Logger) Warnf(format string, v ...any) {
 	l.logger.Warn().Msgf(format, v...)
 }
 
 // Errorf логирует форматированное сообщение с уровнем Error
-func (l *Logger) Errorf(format string, v ...interface{}) {
+func (l *Logger) Errorf(format string, v ...any) {
 	l.logger.Error().Msgf(format, v...)
 }
 
 // Fatalf логирует форматированное сообщение с уровнем Fatal и завершает программу
-func (l *Logger) Fatalf(format string, v ...interface{}) {
+func (l *Logger) Fatalf(format string, v ...any) {
 	l.logger.Fatal().Msgf(format, v...)
 }
 
 // Panicf логирует форматированное сообщение с уровнем Panic и вызывает панику
-func (l *Logger) Panicf(format string, v ...interface{}) {
+func (l *Logger) Panicf(format string, v ...any) {
 	l.logger.Panic().Msgf(format, v...)
 }
 
@@ -198,7 +198,7 @@ func (l *Logger) WithContext(ctx context.Context) *Logger {
 }
 
 // WithFields создает новый логгер с несколькими полями
-func (l *Logger) WithFields(fields map[string]interface{}) *Logger {
+func (l *Logger) WithFields(fields map[string]any) *Logger {
 	ctx := l.logger.With()
 	for k, v := range fields {
 		ctx = ctx.Interface(k, v)
@@ -207,7 +207,7 @@ func (l *Logger) WithFields(fields map[string]interface{}) *Logger {
 }
 
 // WithField создает новый логгер с одним полем
-func (l *Logger) WithField(key string, value interface{}) *Logger {
+func (l *Logger) WithField(key string, value any) *Logger {
 	return &Logger{logger: l.logger.With().Interface(key, value).Logger()}
 }
 
@@ -269,7 +269,7 @@ func (c *Context) Dur(key string, val time.Duration) *Context {
 }
 
 // Interface добавляет поле с любым типом
-func (c *Context) Interface(key string, val interface{}) *Context {
+func (c *Context) Interface(key string, val any) *Context {
 	c.ctx = c.ctx.Interface(key, val)
 	return c
 }
@@ -295,7 +295,7 @@ func (e *Event) Msg(msg string) {
 }
 
 // Msgf завершает событие логирования с форматированным сообщением
-func (e *Event) Msgf(format string, v ...interface{}) {
+func (e *Event) Msgf(format string, v ...any) {
 	if e.event != nil {
 		e.event.Msgf(format, v...)
 	}
@@ -365,7 +365,7 @@ func (e *Event) Dur(key string, val time.Duration) *Event {
 }
 
 // Interface добавляет поле с любым типом к событию
-func (e *Event) Interface(key string, val interface{}) *Event {
+func (e *Event) Interface(key string, val any) *Event {
 	if e.event != nil {
 		e.event.Interface(key, val)
 	}
@@ -420,32 +420,32 @@ func Trace() *Event {
 // Printf-style Global Functions
 
 // Debugf логирует форматированное сообщение Debug с глобальным логгером
-func Debugf(format string, v ...interface{}) {
+func Debugf(format string, v ...any) {
 	GetGlobal().Debugf(format, v...)
 }
 
 // Infof логирует форматированное сообщение Info с глобальным логгером
-func Infof(format string, v ...interface{}) {
+func Infof(format string, v ...any) {
 	GetGlobal().Infof(format, v...)
 }
 
 // Warnf логирует форматированное сообщение Warn с глобальным логгером
-func Warnf(format string, v ...interface{}) {
+func Warnf(format string, v ...any) {
 	GetGlobal().Warnf(format, v...)
 }
 
 // Errorf логирует форматированное сообщение Error с глобальным логгером
-func Errorf(format string, v ...interface{}) {
+func Errorf(format string, v ...any) {
 	GetGlobal().Errorf(format, v...)
 }
 
 // Fatalf логирует форматированное сообщение Fatal с глобальным логгером
-func Fatalf(format string, v ...interface{}) {
+func Fatalf(format string, v ...any) {
 	GetGlobal().Fatalf(format, v...)
 }
 
 // Panicf логирует форматированное сообщение Panic с глобальным логгером
-func Panicf(format string, v ...interface{}) {
+func Panicf(format string, v ...any) {
 	GetGlobal().Panicf(format, v...)
 }
 
@@ -457,12 +457,12 @@ func With() *Context {
 }
 
 // WithFields создает новый логгер с несколькими полями
-func WithFields(fields map[string]interface{}) *Logger {
+func WithFields(fields map[string]any) *Logger {
 	return GetGlobal().WithFields(fields)
 }
 
 // WithField создает новый логгер с одним полем
-func WithField(key string, value interface{}) *Logger {
+func WithField(key string, value any) *Logger {
 	return GetGlobal().WithField(key, value)
 }
 

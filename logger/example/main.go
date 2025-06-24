@@ -49,7 +49,7 @@ func main() {
 	userLogger.Info().Msg("User-specific log entry")
 
 	// Логгер с несколькими полями
-	serviceLogger := logger.WithFields(map[string]interface{}{
+	serviceLogger := logger.WithFields(map[string]any{
 		"service":    "user-service",
 		"version":    "1.2.3",
 		"request_id": "req-123",

@@ -109,7 +109,7 @@ userLogger := logger.WithField("user_id", "12345")
 userLogger.Info().Msg("User-specific operation")
 
 // Логгер с несколькими полями
-serviceLogger := logger.WithFields(map[string]interface{}{
+serviceLogger := logger.WithFields(map[string]any{
     "service":    "user-service",
     "version":    "1.2.3",
     "request_id": "req-123",
@@ -219,7 +219,7 @@ logger.Info().
     Bool("bool_field", true).                       // bool
     Time("time_field", time.Now()).                 // time.Time
     Dur("duration_field", 5*time.Second).           // time.Duration
-    Interface("interface_field", complexObject).     // interface{}
+    Interface("interface_field", complexObject).     // any
     Err(err).                                       // error
     Msg("Message with all field types")
 ```
@@ -230,7 +230,7 @@ logger.Info().
 
 ```go
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-    reqLogger := logger.WithFields(map[string]interface{}{
+    reqLogger := logger.WithFields(map[string]any{
         "method":     r.Method,
         "path":       r.URL.Path,
         "request_id": generateRequestID(),
