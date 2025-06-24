@@ -3,6 +3,7 @@ package healthcheck
 import (
 	"errors"
 	"fmt"
+	platformlogger "gitlab.com/zynero/shared/logger"
 	"net/http"
 )
 
@@ -38,7 +39,7 @@ func New(cfg Config) (*Healthcheck, error) {
 	}
 
 	go func() {
-		fmt.Printf("Starting healthcheck server on %s\n", h.server.Addr)
+		platformlogger.Info().Msgf("Starting healthcheck server on %s", h.server.Addr)
 		if err := h.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic(fmt.Sprintf("Failed to start healthcheck server: %v", err))
 		}
