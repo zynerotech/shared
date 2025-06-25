@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"context"
 	"fmt"
 	"os"
@@ -71,6 +72,30 @@ func NewBuilder(cfg ConfigProvider) *AppBuilder {
 	}
 }
 
+// initOptionalComponent initializes optional component based on configuration
+// provided by OptionalConfigProvider. It appends initialization errors to the
+// builder and logs successful initialization.
+func initOptionalComponent[T any, C any](b *AppBuilder, field *T, getCfg func(OptionalConfigProvider) *C, initFn func(C) (T, error), name, successMsg string) {
+	optCfg, ok := b.config.(OptionalConfigProvider)
+	if !ok {
+		return
+	}
+
+	cfg := getCfg(optCfg)
+	if cfg == nil {
+		return
+	}
+
+	component, err := initFn(*cfg)
+	if err != nil {
+		b.errors = append(b.errors, fmt.Errorf("init %s: %w", name, err))
+		return
+	}
+
+	*field = component
+	platformlogger.Info().Msg(successMsg)
+}
+
 // WithLogger initializes the logger (required component)
 func (b *AppBuilder) WithLogger() *AppBuilder {
 	if b.logger != nil {
@@ -94,18 +119,9 @@ func (b *AppBuilder) WithMetrics() *AppBuilder {
 	if b.metrics != nil {
 		return b
 	}
-
-	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
-		if cfg := optCfg.MetricsConfig(); cfg != nil {
-			metrics, err := platformmetrics.New(*cfg)
-			if err != nil {
-				b.errors = append(b.errors, fmt.Errorf("init metrics: %w", err))
-				return b
-			}
-			b.metrics = metrics
-			platformlogger.Info().Msg("Metrics initialized")
-		}
-	}
+	initOptionalComponent(b, &b.metrics, func(o OptionalConfigProvider) *platformmetrics.Config { return o.MetricsConfig() }, func(cfg platformmetrics.Config) (*platformmetrics.Metrics, error) {
+		return platformmetrics.New(cfg)
+	}, "metrics", "Metrics initialized")
 	return b
 }
 
@@ -114,18 +130,9 @@ func (b *AppBuilder) WithHealthcheck() *AppBuilder {
 	if b.healthcheck != nil {
 		return b
 	}
-
-	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
-		if cfg := optCfg.HealthcheckConfig(); cfg != nil {
-			health, err := platformhealthcheck.New(*cfg)
-			if err != nil {
-				b.errors = append(b.errors, fmt.Errorf("init healthcheck: %w", err))
-				return b
-			}
-			b.healthcheck = health
-			platformlogger.Info().Msg("Healthcheck initialized")
-		}
-	}
+	initOptionalComponent(b, &b.healthcheck, func(o OptionalConfigProvider) *platformhealthcheck.Config { return o.HealthcheckConfig() }, func(cfg platformhealthcheck.Config) (*platformhealthcheck.Healthcheck, error) {
+		return platformhealthcheck.New(cfg)
+	}, "healthcheck", "Healthcheck initialized")
 	return b
 }
 
@@ -134,18 +141,9 @@ func (b *AppBuilder) WithServer() *AppBuilder {
 	if b.server != nil {
 		return b
 	}
-
-	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
-		if cfg := optCfg.ServerConfig(); cfg != nil {
-			server, err := platformserver.New(*cfg)
-			if err != nil {
-				b.errors = append(b.errors, fmt.Errorf("init server: %w", err))
-				return b
-			}
-			b.server = server
-			platformlogger.Info().Msg("HTTP server initialized")
-		}
-	}
+	initOptionalComponent(b, &b.server, func(o OptionalConfigProvider) *platformserver.Config { return o.ServerConfig() }, func(cfg platformserver.Config) (*platformserver.Server, error) {
+		return platformserver.New(cfg)
+	}, "server", "HTTP server initialized")
 	return b
 }
 
@@ -154,18 +152,9 @@ func (b *AppBuilder) WithDatabase() *AppBuilder {
 	if b.database != nil {
 		return b
 	}
-
-	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
-		if cfg := optCfg.DatabaseConfig(); cfg != nil {
-			db, err := platformdatabase.New(*cfg)
-			if err != nil {
-				b.errors = append(b.errors, fmt.Errorf("init database: %w", err))
-				return b
-			}
-			b.database = db
-			platformlogger.Info().Msg("Database initialized")
-		}
-	}
+	initOptionalComponent(b, &b.database, func(o OptionalConfigProvider) *platformdatabase.Config { return o.DatabaseConfig() }, func(cfg platformdatabase.Config) (*platformdatabase.Database, error) {
+		return platformdatabase.New(cfg)
+	}, "database", "Database initialized")
 	return b
 }
 
@@ -174,18 +163,9 @@ func (b *AppBuilder) WithCache() *AppBuilder {
 	if b.cache != nil {
 		return b
 	}
-
-	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
-		if cfg := optCfg.CacheConfig(); cfg != nil {
-			cache, err := platformcache.New(*cfg)
-			if err != nil {
-				b.errors = append(b.errors, fmt.Errorf("init cache: %w", err))
-				return b
-			}
-			b.cache = cache
-			platformlogger.Info().Msg("Cache initialized")
-		}
-	}
+	initOptionalComponent(b, &b.cache, func(o OptionalConfigProvider) *platformcache.Config { return o.CacheConfig() }, func(cfg platformcache.Config) (platformcache.Cache, error) {
+		return platformcache.New(cfg)
+	}, "cache", "Cache initialized")
 	return b
 }
 
@@ -194,19 +174,13 @@ func (b *AppBuilder) WithKafka() *AppBuilder {
 	if b.eventPublisher != nil {
 		return b
 	}
-
-	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
-		if cfg := optCfg.KafkaConfig(); cfg != nil {
-			producer, err := kafka.NewProducer(*cfg)
-			if err != nil {
-				b.errors = append(b.errors, fmt.Errorf("init kafka producer: %w", err))
-				return b
-			}
-			publisher := kafka.NewKafkaEventPublisher(producer, cfg.Producer.Topic)
-			b.eventPublisher = publisher
-			platformlogger.Info().Msg("Kafka producer initialized")
+	initOptionalComponent(b, &b.eventPublisher, func(o OptionalConfigProvider) *kafka.Config { return o.KafkaConfig() }, func(cfg kafka.Config) (*kafka.KafkaEventPublisher, error) {
+		producer, err := kafka.NewProducer(cfg)
+		if err != nil {
+			return nil, err
 		}
-	}
+		return kafka.NewKafkaEventPublisher(producer, cfg.Producer.Topic), nil
+	}, "kafka producer", "Kafka producer initialized")
 	return b
 }
 
@@ -215,18 +189,9 @@ func (b *AppBuilder) WithGRPC() *AppBuilder {
 	if b.grpcServer != nil {
 		return b
 	}
-
-	if optCfg, ok := b.config.(OptionalConfigProvider); ok {
-		if cfg := optCfg.GRPCConfig(); cfg != nil {
-			grpcServer, err := platformgrpc.NewServer(*cfg, b.logger, nil)
-			if err != nil {
-				b.errors = append(b.errors, fmt.Errorf("init grpc server: %w", err))
-				return b
-			}
-			b.grpcServer = grpcServer
-			platformlogger.Info().Msg("gRPC server initialized")
-		}
-	}
+	initOptionalComponent(b, &b.grpcServer, func(o OptionalConfigProvider) *platformgrpc.Config { return o.GRPCConfig() }, func(cfg platformgrpc.Config) (*platformgrpc.Server, error) {
+		return platformgrpc.NewServer(cfg, b.logger, nil)
+	}, "grpc server", "gRPC server initialized")
 	return b
 }
 
@@ -250,7 +215,7 @@ func (b *AppBuilder) Build() (*App, error) {
 	}
 
 	if len(b.errors) > 0 {
-		return nil, fmt.Errorf("failed to build app: %v", b.errors)
+		return nil, fmt.Errorf("failed to build app: %w", errors.Join(b.errors...))
 	}
 
 	platformlogger.Info().Msg("All requested application components initialized successfully")
