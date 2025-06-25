@@ -26,9 +26,11 @@ import (
 
 ## Тегирование
 ````bash
+git tag app/v0.1.20
 git tag cache/v0.1.20
 git tag config/v0.1.20
 git tag database/v0.1.20
+git tag grpc/v0.1.20
 git tag healthcheck/v0.1.20
 git tag logger/v0.1.20
 git tag metrics/v0.1.20

@@ -54,8 +54,8 @@ github.com/valyala/fasthttp v1.62.0 h1:8dKRBX/y2rCzyc6903Zu1+3qN0H/d2MsxPPmVNami
 github.com/valyala/fasthttp v1.62.0/go.mod h1:FCINgr4GKdKqV8Q0xv8b+UxPV+H/O5nNFo3D+r54Htg=
 github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZqKjWU=
 github.com/xyproto/randomstring v1.0.5/go.mod h1:rgmS5DeNXLivK7YprL0pY+lTuhNQW3iGxZ18UQApw/E=
-gitlab.com/zynero/shared/logger v0.1.10 h1:hfTs7vbO2IlKzY8/78ZlrO4AvURJ/E6KcqSuuqRpICo=
-gitlab.com/zynero/shared/logger v0.1.10/go.mod h1:zz7f/gSih5ZTMT9Ib3+QXblyTkX77jWM2km9tlo1MOQ=
+gitlab.com/zynero/shared/logger v0.1.20 h1:WMCVHoaXRIyjV3QtixLIEF5SmjxB04uGFJtMa7C62kI=
+gitlab.com/zynero/shared/logger v0.1.20/go.mod h1:zz7f/gSih5ZTMT9Ib3+QXblyTkX77jWM2km9tlo1MOQ=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.12.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
