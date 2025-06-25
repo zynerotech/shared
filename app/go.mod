@@ -7,28 +7,12 @@ require (
 	gitlab.com/zynero/shared/cache v0.1.5
 	gitlab.com/zynero/shared/database v0.1.5
 	gitlab.com/zynero/shared/grpc v0.1.1
-	gitlab.com/zynero/shared/healthcheck v0.1.5
+	gitlab.com/zynero/shared/healthcheck v0.1.6
 	gitlab.com/zynero/shared/logger v0.1.10
-	gitlab.com/zynero/shared/metrics v0.1.5
+	gitlab.com/zynero/shared/metrics v0.1.6
 	gitlab.com/zynero/shared/server v0.1.5
 	gitlab.com/zynero/shared/transport v0.1.5
 )
-
-replace gitlab.com/zynero/shared/cache => ../cache
-
-replace gitlab.com/zynero/shared/database => ../database
-
-replace gitlab.com/zynero/shared/grpc => ../grpc
-
-replace gitlab.com/zynero/shared/healthcheck => ../healthcheck
-
-replace gitlab.com/zynero/shared/logger => ../logger
-
-replace gitlab.com/zynero/shared/metrics => ../metrics
-
-replace gitlab.com/zynero/shared/server => ../server
-
-replace gitlab.com/zynero/shared/transport => ../transport
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
