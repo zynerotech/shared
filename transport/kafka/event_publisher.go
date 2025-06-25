@@ -55,3 +55,11 @@ func (kep *KafkaEventPublisher) Publish(ctx context.Context, eventType string, e
 	// или партиционирования по ID события, если это необходимо.
 	return kep.producer.Publish(ctx, kep.topic, envelope.EventID, envelopeBytes)
 }
+
+// Close освобождает ресурсы продюсера.
+func (kep *KafkaEventPublisher) Close() error {
+	if kep.producer == nil {
+		return nil
+	}
+	return kep.producer.Close()
+}

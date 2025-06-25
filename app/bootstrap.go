@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"context"
 	"fmt"
 	"os"
 
@@ -251,6 +252,22 @@ func (a *App) Close() error {
 
 	platformlogger.Info().Msg("Shutting down application components")
 
+	if a.Server != nil {
+		if err := a.Server.Stop(); err != nil {
+			platformlogger.Error().Err(err).Msg("Failed to stop HTTP server")
+			return err
+		}
+		platformlogger.Info().Msg("HTTP server stopped")
+	}
+
+	if a.GRPCServer != nil {
+		if err := a.GRPCServer.Stop(context.Background()); err != nil {
+			platformlogger.Error().Err(err).Msg("Failed to stop gRPC server")
+			return err
+		}
+		platformlogger.Info().Msg("gRPC server stopped")
+	}
+
 	if a.Database != nil {
 		a.Database.Close()
 		platformlogger.Info().Msg("Database connection closed")
@@ -262,6 +279,22 @@ func (a *App) Close() error {
 			return err
 		}
 		platformlogger.Info().Msg("Metrics stopped")
+	}
+
+	if a.Cache != nil {
+		if err := a.Cache.Close(); err != nil {
+			platformlogger.Error().Err(err).Msg("Failed to close cache")
+			return err
+		}
+		platformlogger.Info().Msg("Cache closed")
+	}
+
+	if a.EventPublisher != nil {
+		if err := a.EventPublisher.Close(); err != nil {
+			platformlogger.Error().Err(err).Msg("Failed to close event publisher")
+			return err
+		}
+		platformlogger.Info().Msg("Event publisher closed")
 	}
 
 	if a.Healthcheck != nil {
