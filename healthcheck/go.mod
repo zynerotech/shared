@@ -2,7 +2,7 @@ module gitlab.com/zynero/shared/healthcheck
 
 go 1.24.2
 
-require gitlab.com/zynero/shared/logger v0.1.10
+require gitlab.com/zynero/shared/logger v0.1.20
 
 require (
 	github.com/mattn/go-colorable v0.1.14 // indirect

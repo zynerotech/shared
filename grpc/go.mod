@@ -5,7 +5,7 @@ go 1.24.2
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	gitlab.com/zynero/shared/logger v0.1.8
+	gitlab.com/zynero/shared/logger v0.1.20
 	google.golang.org/grpc v1.73.0
 )
 
