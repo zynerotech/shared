@@ -3,6 +3,7 @@ module gitlab.com/zynero/shared/app
 go 1.24.2
 
 require (
+	bou.ke/monkey v1.0.2
 	gitlab.com/zynero/shared/cache v0.1.5
 	gitlab.com/zynero/shared/database v0.1.5
 	gitlab.com/zynero/shared/grpc v0.1.1
@@ -12,6 +13,22 @@ require (
 	gitlab.com/zynero/shared/server v0.1.5
 	gitlab.com/zynero/shared/transport v0.1.5
 )
+
+replace gitlab.com/zynero/shared/cache => ../cache
+
+replace gitlab.com/zynero/shared/database => ../database
+
+replace gitlab.com/zynero/shared/grpc => ../grpc
+
+replace gitlab.com/zynero/shared/healthcheck => ../healthcheck
+
+replace gitlab.com/zynero/shared/logger => ../logger
+
+replace gitlab.com/zynero/shared/metrics => ../metrics
+
+replace gitlab.com/zynero/shared/server => ../server
+
+replace gitlab.com/zynero/shared/transport => ../transport
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
@@ -52,11 +69,11 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	golang.org/x/arch v0.18.0 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
+	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/grpc v1.73.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )

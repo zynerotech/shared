@@ -32,6 +32,8 @@ type Cache interface {
 	Marshal(v any) ([]byte, error)
 	// Unmarshal десериализует байты в значение
 	Unmarshal(data []byte, v any) error
+	// Close освобождает ресурсы кеша
+	Close() error
 }
 
 // New создает новый экземпляр кеша на основе конфигурации
@@ -108,6 +110,10 @@ func (rc *redisCache) Unmarshal(data []byte, v any) error {
 	return sonic.Unmarshal(data, v)
 }
 
+func (rc *redisCache) Close() error {
+	return rc.client.Close()
+}
+
 // noopCache реализует Cache с пустой реализацией
 type noopCache struct{}
 
@@ -134,3 +140,5 @@ func (nc *noopCache) Marshal(v any) ([]byte, error) {
 func (nc *noopCache) Unmarshal(data []byte, v any) error {
 	return sonic.Unmarshal(data, v)
 }
+
+func (nc *noopCache) Close() error { return nil }

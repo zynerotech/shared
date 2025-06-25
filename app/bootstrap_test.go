@@ -1,9 +1,16 @@
 package app
 
 import (
+	"context"
+	"reflect"
 	"testing"
+	"time"
 
+	monkey "bou.ke/monkey"
+	platformgrpc "gitlab.com/zynero/shared/grpc"
 	platformlogger "gitlab.com/zynero/shared/logger"
+	platformserver "gitlab.com/zynero/shared/server"
+	"gitlab.com/zynero/shared/transport/kafka"
 )
 
 // TestConfig представляет тестовую конфигурацию
@@ -60,6 +67,24 @@ func (c TestOptionalConfig) KafkaConfig() *platformlogger.Config {
 func (c TestOptionalConfig) GRPCConfig() *platformlogger.Config {
 	return nil
 }
+
+type fakeCache struct{ closed bool }
+
+func (f *fakeCache) Get(ctx context.Context, key string) ([]byte, error) { return nil, nil }
+func (f *fakeCache) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
+	return nil
+}
+func (f *fakeCache) Delete(ctx context.Context, key string) error { return nil }
+func (f *fakeCache) Marshal(v any) ([]byte, error)                { return nil, nil }
+func (f *fakeCache) Unmarshal(data []byte, v any) error           { return nil }
+func (f *fakeCache) Close() error                                 { f.closed = true; return nil }
+
+type fakeProducer struct{ closed bool }
+
+func (p *fakeProducer) Publish(ctx context.Context, topic, key string, value []byte) error {
+	return nil
+}
+func (p *fakeProducer) Close() error { p.closed = true; return nil }
 
 func TestNewWithLogger(t *testing.T) {
 	cfg := TestConfig{
@@ -183,10 +208,47 @@ func TestAppClose(t *testing.T) {
 		t.Fatalf("Failed to create app: %v", err)
 	}
 
+	// Подготовка фейковых компонентов
+	fc := &fakeCache{}
+	fp := &fakeProducer{}
+	application.Cache = fc
+	application.EventPublisher = kafka.NewKafkaEventPublisher(fp, "test")
+	application.Server = &platformserver.Server{}
+	application.GRPCServer = &platformgrpc.Server{}
+
+	var httpStopped, grpcStopped bool
+	patchHTTP := monkey.PatchInstanceMethod(reflect.TypeOf(&platformserver.Server{}), "Stop", func(*platformserver.Server) error {
+		httpStopped = true
+		return nil
+	})
+	defer patchHTTP.Unpatch()
+
+	patchGRPC := monkey.PatchInstanceMethod(reflect.TypeOf(&platformgrpc.Server{}), "Stop", func(*platformgrpc.Server, context.Context) error {
+		grpcStopped = true
+		return nil
+	})
+	defer patchGRPC.Unpatch()
+
 	// Тестируем закрытие приложения
 	err = application.Close()
 	if err != nil {
 		t.Errorf("Failed to close app: %v", err)
+	}
+
+	if !httpStopped {
+		t.Error("HTTP server Stop was not called")
+	}
+
+	if !grpcStopped {
+		t.Error("gRPC server Stop was not called")
+	}
+
+	if !fc.closed {
+		t.Error("Cache Close was not called")
+	}
+
+	if !fp.closed {
+		t.Error("Producer Close was not called")
 	}
 
 	// Тестируем закрытие nil приложения
